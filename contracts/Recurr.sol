@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 // Uncomment this line to use console.log
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract Recurr {
     address public owner;
@@ -76,8 +76,11 @@ contract Recurr {
     }
 
     function createFanSubcription(bytes32 _recurringPlan) public {
+        
+        RecurringPlan storage sub = recurringPlans[_recurringPlan];
+
         require(
-            recurringPlans[_recurringPlan].createdBy != address(0),
+            sub.createdBy != address(0),
             "Recurring plan does not exist"
         );
 
