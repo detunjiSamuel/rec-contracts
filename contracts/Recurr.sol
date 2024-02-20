@@ -4,6 +4,8 @@ pragma solidity ^0.8.24;
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 contract Recurr {
     address public owner;
 
@@ -50,6 +52,11 @@ contract Recurr {
     event FanSubcriptionEnded(
         address indexed endedBy,
         bytes32 indexed _fanSubcriptionHash
+    );
+
+    event PaymentMade(
+        bytes32 indexed _fanSubcriptionHash,
+        address indexed _createdBy
     );
 
     function createPlan(
@@ -139,5 +146,29 @@ contract Recurr {
         emit FanSubcriptionEnded(msg.sender, _fanSubcriptionHash);
     }
 
-    function makePayment() public {}
+    function makePayment(bytes32 _fanSubcriptionHash) public {
+        FanSubcription storage sub = fanSubscriptions[_fanSubcriptionHash];
+
+        require(sub.createdBy != address(0), "Subcription does not exist");
+
+        RecurringPlan storage plan = recurringPlans[sub.recurringPlan];
+
+        require(sub.isActive, "Subcription is not active");
+
+        require(
+            block.timestamp - sub.lastChargedAt >= plan.intervalPeriod,
+            "It's not time to charge yet"
+        );
+
+        sub.lastChargedAt = block.timestamp;
+        sub.totalPaymentMade += 1;
+
+        IERC20(plan.token).transferFrom(
+            sub.createdBy,
+            plan.createdBy,
+            plan.amountToCharge
+        );
+
+        emit PaymentMade(_fanSubcriptionHash, sub.createdBy);
+    }
 }
