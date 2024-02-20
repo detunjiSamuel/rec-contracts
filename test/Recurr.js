@@ -1,32 +1,44 @@
 const {
- loadFixture,
+  loadFixture,
 } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 
 describe("Creator Plans", function () {
+  async function Fixture() {
+    const [owner, otherAccount] = await ethers.getSigners();
 
+    const RecurrContractFactory = await ethers.getContractFactory("Recurr");
+    const RecurrContract = await RecurrContractFactory.deploy(owner);
 
- async function Fixture() {
+    return { RecurrContractFactory, RecurrContract, owner, otherAccount };
+  }
 
-   const [owner , otherAccount] = await ethers.getSigners();
+  describe("Deployment setup", function () {
+    it("Should deploy witth correct owner", async function () {
+      const { RecurrContract, owner } = await loadFixture(Fixture);
 
-   const RecurrContractFactory = await ethers.getContractFactory("Recurr");
-   const RecurrContract = await RecurrContractFactory.deploy( owner );
-
-   return {  RecurrContractFactory , RecurrContract , owner, otherAccount };
- }
-
-
- describe("Deployment setup", function () {
-  it("Should deploy witth correct owner", async function () {
-    const { RecurrContract , owner, } = await loadFixture(Fixture);
-
-    expect(await RecurrContract.owner()).to.equal(owner.address);
+      expect(await RecurrContract.owner()).to.equal(owner.address);
+    });
   });
- });
 
+  describe("Creator Recurring Payment Plan", function () {
+    it("Should be able to create a plan", async function () {
+      const { RecurrContract, owner, otherAccount } = await loadFixture(
+        Fixture
+      );
+    });
 
+    it("Should be able to created plan emit event  ", async function () {
+      const { RecurrContract, owner, otherAccount } = await loadFixture(
+        Fixture
+      );
+    });
 
-
+    it("Should fail to create duplicate plans  ", async function () {
+      const { RecurrContract, owner, otherAccount } = await loadFixture(
+        Fixture
+      );
+    });
+  });
 });
