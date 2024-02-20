@@ -23,22 +23,32 @@ describe("Creator Plans", function () {
   });
 
   describe("Creator Recurring Payment Plan", function () {
+    const amountToCharge = 10;
+    const period = 1200;
+    const expirationPeriod = 200;
+
     it("Should be able to create a plan", async function () {
       const { RecurrContract, owner, otherAccount } = await loadFixture(
         Fixture
       );
+
+      const planCreated = await RecurrContract.createPlan(
+        otherAccount.address,
+        amountToCharge,
+        period,
+        expirationPeriod
+      );
+
+      expect(planCreated)
+        .to.emit(RecurrContract, "PlanCreated")
+        .withArgs(
+          otherAccount.address,
+          amountToCharge,
+          period,
+          expirationPeriod
+        );
     });
 
-    it("Should be able to created plan emit event  ", async function () {
-      const { RecurrContract, owner, otherAccount } = await loadFixture(
-        Fixture
-      );
-    });
 
-    it("Should fail to create duplicate plans  ", async function () {
-      const { RecurrContract, owner, otherAccount } = await loadFixture(
-        Fixture
-      );
-    });
   });
 });
