@@ -12,6 +12,8 @@ contract Recurr {
         uint256 amountToCharge;
         uint256 intervalPeriod;
         uint256 expirationPeriod;
+        address token;
+        uint256 freeTrialPeriod;
     }
 
     struct FanSubcription {
@@ -45,11 +47,18 @@ contract Recurr {
         uint256 _startsAt
     );
 
+    event FanSubcriptionEnded(
+        address indexed endedBy,
+        bytes32 indexed _fanSubcriptionHash
+    );
+
     function createPlan(
         address _createdBy,
         uint256 _amountToCharge,
         uint256 _intervalPeriod,
-        uint256 _expirationPeriod
+        uint256 _expirationPeriod,
+        address _token,
+        uint256 _freeTrialPeriod
     ) public {
         bytes32 planId = keccak256(
             abi.encodePacked(
@@ -64,7 +73,9 @@ contract Recurr {
             _createdBy,
             _amountToCharge,
             _intervalPeriod,
-            _expirationPeriod
+            _expirationPeriod,
+            _token,
+            _freeTrialPeriod
         );
 
         emit planCreated(
@@ -75,18 +86,16 @@ contract Recurr {
         );
     }
 
-    function createFanSubcription(bytes32 _recurringPlan) public {
-        
+    function createFanSubcription(
+        bytes32 _recurringPlan
+    ) public returns (bytes32 fanSubcriptionHash) {
         RecurringPlan storage sub = recurringPlans[_recurringPlan];
 
-        require(
-            sub.createdBy != address(0),
-            "Recurring plan does not exist"
-        );
+        require(sub.createdBy != address(0), "Recurring plan does not exist");
 
         plansSubcribersCount[_recurringPlan] += 1;
 
-        bytes32 fanSubcriptionHash = keccak256(
+        fanSubcriptionHash = keccak256(
             abi.encodePacked(
                 _recurringPlan,
                 plansSubcribersCount[_recurringPlan]
@@ -109,4 +118,26 @@ contract Recurr {
             block.timestamp
         );
     }
+
+    function stopFanSubcription(bytes32 _fanSubcriptionHash) public {
+        FanSubcription storage sub = fanSubscriptions[_fanSubcriptionHash];
+
+        require(sub.createdBy != address(0), "Subcription does not exist");
+
+        RecurringPlan storage plan = recurringPlans[sub.recurringPlan];
+
+        bool userCanPerformAction = sub.createdBy == msg.sender ||
+            plan.createdBy == msg.sender;
+
+        require(
+            userCanPerformAction,
+            "You are not the owner of this subcription"
+        );
+
+        sub.isActive = false;
+
+        emit FanSubcriptionEnded(msg.sender, _fanSubcriptionHash);
+    }
+
+    function makePayment() public {}
 }

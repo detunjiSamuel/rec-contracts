@@ -8,6 +8,8 @@ const web3 = require("web3");
 const amountToCharge = 10;
 const intervalPeriod = 1200;
 const expirationPeriod = 200;
+const tokenAddress = "0x1234567890123456789012345678901234567890";
+const freeTrailPeriod = 0;
 
 async function Fixture() {
   const [owner, otherAccount] = await ethers.getSigners();
@@ -47,7 +49,9 @@ describe("Fan subcriptions", function () {
       otherAccount.address,
       amountToCharge,
       intervalPeriod,
-      expirationPeriod
+      expirationPeriod,
+      tokenAddress,
+      freeTrailPeriod
     );
 
     const expectedPlanId = web3.utils.soliditySha3(
@@ -88,6 +92,49 @@ describe("Fan subcriptions", function () {
   });
 });
 
+describe("Fan subcription Termination", async function () {
+  const { RecurrContract, owner } = await loadFixture(Fixture);
+
+  it("should fail with invalid subscription", async function () {
+    const invalidHash = web3.utils.soliditySha3({
+      type: "address",
+      value: otherAccount.address,
+    });
+
+    await expect(
+      RecurrContract.stopFanSubcription(invalidHash)
+    ).to.be.rejectedWith("Subcription does not exist");
+  });
+
+  it("should emit and update as ended", async function () {
+    await RecurrContract.createPlan(
+      otherAccount.address,
+      amountToCharge,
+      intervalPeriod,
+      expirationPeriod,
+      tokenAddress,
+      freeTrailPeriod
+    );
+
+    const expectedPlanId = web3.utils.soliditySha3(
+      { type: "address", value: otherAccount.address },
+      { type: "uint256", value: amountToCharge },
+      { type: "uint256", value: intervalPeriod },
+      { type: "uint256", value: expirationPeriod }
+    );
+
+    const subCreated = await RecurrContract.createFanSubcription(
+      expectedPlanId
+    );
+
+    const stoppedSub = await RecurrContract.stopFanSubcription(invalidHash);
+
+    expect(stoppedSub)
+      .to.emit(RecurrContract, "FanSubcriptionEnded")
+      .withArgs(owner.address);
+  });
+});
+
 describe("Creator Plans", function () {
   describe("Creator Recurring Payment Plan", function () {
     it("Should find created plan in mapping", async function () {
@@ -99,7 +146,9 @@ describe("Creator Plans", function () {
         otherAccount.address,
         amountToCharge,
         intervalPeriod,
-        expirationPeriod
+        expirationPeriod,
+        tokenAddress,
+        freeTrailPeriod
       );
 
       const planId = web3.utils.soliditySha3(
@@ -122,7 +171,9 @@ describe("Creator Plans", function () {
         otherAccount.address,
         amountToCharge,
         intervalPeriod,
-        expirationPeriod
+        expirationPeriod,
+        tokenAddress,
+        freeTrailPeriod
       );
 
       expect(planCreated)
